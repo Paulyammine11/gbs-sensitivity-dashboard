@@ -5,7 +5,7 @@ import numpy as np
 st.set_page_config(page_title="GBS Acquisition Dashboard", layout="wide")
 
 st.markdown("<h2 style='color: #0A3841;'>GBS Acquisition — Dynamic Sensitivity & Funding Simulator</h2>", unsafe_allow_html=True)
-st.caption("Standalone Asset Level — Fully Dynamic Working Capital & Capital Deficit Engine")
+st.caption("Standalone Asset Level — Dynamic Working Capital & Auto-Sized Equity Engine")
 
 # Pure Python IRR solver
 def calculate_irr(cash_flows, iterations=1000, tol=1e-5):
@@ -22,7 +22,7 @@ def calculate_irr(cash_flows, iterations=1000, tol=1e-5):
     return (rate_low + rate_high) / 2.0
 
 # ---------------------------------------------------------
-# 1. INPUT DRIVER SELECTORS (Operational & Capital Controls)
+# 1. INPUT DRIVER SELECTORS
 # ---------------------------------------------------------
 st.subheader("1. Input Driver Selectors")
 
@@ -41,7 +41,7 @@ with col_r3:
     rev2029 = st.slider("Year 3 (2029F) Revenue ($)", 5_000_000, 25_000_000, 16_887_843, step=100_000)
     st.markdown(f"<p style='color: #0A3841; font-weight: bold;'>2029 Target: ${rev2029:,.0f}</p>", unsafe_allow_html=True)
 
-st.markdown("##### **Margin, Valuation & Funding Controls**")
+st.markdown("##### **Margin, Valuation & Dynamic Equity Structure**")
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
 with col_m1:
@@ -53,24 +53,24 @@ with col_m2:
     st.markdown(f"<p style='color: #0A3841; font-weight: bold;'>Multiple: {mult:.2f}x</p>", unsafe_allow_html=True)
 
 with col_m3:
-    initial_equity = st.slider("Base Equity Commitment ($)", 500_000, 2_500_000, 1_000_000, step=50_000)
-    st.markdown(f"<p style='color: #0A3841; font-weight: bold;'>Commitment: ${initial_equity:,.0f}</p>", unsafe_allow_html=True)
-
+    equity_mode = st.radio("Equity Commitment Mode", ["Auto-Sized (Dynamic)", "Fixed Manual Cap"])
+    
 with col_m4:
-    ar_days = st.slider("Accounts Receivable Days", 30, 120, 60, step=5)
-    st.markdown(f"<p style='color: #0A3841; font-weight: bold;'>Collection Terms: {ar_days} Days</p>", unsafe_allow_html=True)
+    if equity_mode == "Auto-Sized (Dynamic)":
+        safety_buffer_pct = st.slider("Equity Safety Buffer (%)", 0.0, 30.0, 10.0, step=5.0) / 100.0
+        manual_equity = 0.0
+    else:
+        manual_equity = st.slider("Manual Base Equity ($)", 500_000, 2_500_000, 1_000_000, step=50_000)
+        safety_buffer_pct = 0.0
 
 # ---------------------------------------------------------
-# 2. DYNAMIC P&L & WORKING CAPITAL CALCULATIONS
+# 2. DYNAMIC FINANCIAL CALCULATIONS
 # ---------------------------------------------------------
 gp2027 = rev2027 * gm
 gp2028 = rev2028 * gm
 gp2029 = rev2029 * gm
 
-# Fixed Overheads
-oh2027 = 682410.60
-oh2028 = 418605.33
-oh2029 = 421959.80
+oh2027, oh2028, oh2029 = 682410.60, 418605.33, 421959.80
 
 ebitda2027 = gp2027 - oh2027
 ebitda2028 = gp2028 - oh2028
@@ -82,31 +82,36 @@ ebitda_margin_2029 = (ebitda2029 / rev2029) * 100.0 if rev2029 > 0 else 0
 
 tv = max(0.0, ebitda2029 * mult)
 
-# Dynamic Working Capital & Cash Burn Engine
+# Dynamic Working Capital & Operational Cash Burn
+ar_days = 60
 ar_2027 = rev2027 * (ar_days / 365.0)
 ar_2028 = rev2028 * (ar_days / 365.0)
 ar_2029 = rev2029 * (ar_days / 365.0)
 
-# Operating Cash Flow Modeling
-cf_2026_ops = -521764.85 # Pre-launch 2026 setup burn
-cf_2027_ops = ebitda2027 - (ar_2027 - 252500.0) # Adjust for AR working capital building
+cf_2026_ops = -521764.85
+cf_2027_ops = ebitda2027 - (ar_2027 - 252500.0)
 cf_2028_ops = ebitda2028 - (ar_2028 - ar_2027)
 cf_2029_ops = ebitda2029 - (ar_2029 - ar_2028)
 
-# Cumulative Dynamic Cash Deficit (Funding Needs)
+# Peak Deficit Calculation
 cum_cash_2026 = cf_2026_ops
 cum_cash_2027 = cum_cash_2026 + cf_2027_ops
 cum_cash_2028 = cum_cash_2027 + cf_2028_ops
 
-peak_cash_deficit = min(0.0, cum_cash_2026, cum_cash_2027, cum_cash_2028)
-dynamic_funding_needed = abs(peak_cash_deficit)
-funding_buffer = initial_equity - dynamic_funding_needed
+peak_cash_deficit = abs(min(0.0, cum_cash_2026, cum_cash_2027, cum_cash_2028))
 
-# Returns & IRR
-cash_flows = [-initial_equity + cf_2026_ops, cf_2027_ops, cf_2028_ops, cf_2029_ops + tv]
+# Dynamic Equity Sizing Engine
+if equity_mode == "Auto-Sized (Dynamic)":
+    dynamic_committed_equity = peak_cash_deficit * (1.0 + safety_buffer_pct)
+else:
+    dynamic_committed_equity = manual_equity
+
+funding_cushion = dynamic_committed_equity - peak_cash_deficit
+
+# Returns & IRR Calculation
+cash_flows = [-dynamic_committed_equity + cf_2026_ops, cf_2027_ops, cf_2028_ops, cf_2029_ops + tv]
 calculated_irr = calculate_irr(cash_flows) * 100.0
 
-# EBITDA Breakeven Revenues
 be_rev_2027 = oh2027 / gm if gm > 0 else 0
 be_rev_2028 = oh2028 / gm if gm > 0 else 0
 be_rev_2029 = oh2029 / gm if gm > 0 else 0
@@ -114,7 +119,7 @@ be_rev_2029 = oh2029 / gm if gm > 0 else 0
 st.divider()
 
 # ---------------------------------------------------------
-# 3. LIVE OUTPUTS & DYNAMIC FUNDING DASHBOARD
+# 3. LIVE OUTPUTS & FUNDING METRICS
 # ---------------------------------------------------------
 st.subheader("2. Live Financial Outputs & Returns")
 
@@ -132,10 +137,10 @@ col8.metric("Projected IRR (Output)", f"{calculated_irr:.2f}%")
 
 st.markdown("##### **Dynamic Capital & Funding Dashboard**")
 f1, f2, f3, f4 = st.columns(4)
-f1.metric("Peak Cash Deficit (Funding Need)", f"${dynamic_funding_needed:,.0f}", help="Maximum cash burn across startup phase & operations.")
-f2.metric("Committed Base Equity", f"${initial_equity:,.0f}")
-f3.metric("Funding Cushion / (Shortfall)", f"${funding_buffer:,.0f}", delta=f"{funding_buffer:,.0f}")
-f4.metric("AR Working Capital Lockup (Yr 1)", f"${ar_2027:,.0f}", f"{ar_days} Days AR")
+f1.metric("Peak Cash Deficit", f"${peak_cash_deficit:,.0f}", help="Max cumulative cash burn before cash flow positivity.")
+f2.metric("Dynamic Committed Equity", f"${dynamic_committed_equity:,.0f}", f"Mode: {equity_mode}")
+f3.metric("Funding Cushion / (Shortfall)", f"${funding_cushion:,.0f}", delta=f"{funding_cushion:,.0f}")
+f4.metric("Equity Efficiency Ratio", f"{tv/dynamic_committed_equity:.2f}x EV/Equity" if dynamic_committed_equity > 0 else "N/A")
 
 st.divider()
 
@@ -143,7 +148,6 @@ st.divider()
 # 4. EBITDA BREAKEVEN ANALYSIS AT GROSS MARGIN LEVEL
 # ---------------------------------------------------------
 st.subheader("3. EBITDA Breakeven Analysis")
-st.caption("Sales revenue levels required to achieve Breakeven EBITDA ($0) across operating years.")
 
 b1, b2, b3 = st.columns(3)
 b1.metric("2027F Breakeven Revenue", f"${be_rev_2027:,.0f}", f"Current: ${rev2027:,.0f}")
