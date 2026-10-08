@@ -22,34 +22,39 @@ def calculate_irr(cash_flows, iterations=1000, tol=1e-5):
     return (rate_low + rate_high) / 2.0
 
 # ---------------------------------------------------------
-# 1. INPUT DRIVER SELECTORS
+# 1. INPUT DRIVER SELECTORS (Year 1, 2, 3 Independent Inputs)
 # ---------------------------------------------------------
 st.subheader("1. Input Driver Selectors")
 
-col_s1, col_s2, col_s3 = st.columns(3)
+st.markdown("##### **Revenue Trajectory Inputs (Years 1–3)**")
+col_r1, col_r2, col_r3 = st.columns(3)
 
-with col_s1:
-    rev2027 = st.slider("Year 1 (2027F) Revenue ($)", 1000000, 2500000, 1626975, step=25000)
-    st.markdown(f"<p style='color: #0A3841; font-weight: bold;'>Target 2027: ${rev2027:,.0f}</p>", unsafe_allow_html=True)
+with col_r1:
+    rev2027 = st.slider("Year 1 (2027F) Revenue ($)", 1_000_000, 2_500_000, 1_626_975, step=25_000)
+    st.markdown(f"<p style='color: #0A3841; font-weight: bold;'>2027 Target: ${rev2027:,.0f}</p>", unsafe_allow_html=True)
 
-with col_s2:
+with col_r2:
+    rev2028 = st.slider("Year 2 (2028F) Revenue ($)", 2_000_000, 8_000_000, 5_241_736, step=50_000)
+    st.markdown(f"<p style='color: #0A3841; font-weight: bold;'>2028 Target: ${rev2028:,.0f}</p>", unsafe_allow_html=True)
+
+with col_r3:
+    rev2029 = st.slider("Year 3 (2029F) Revenue ($)", 5_000_000, 25_000_000, 16_887_843, step=100_000)
+    st.markdown(f"<p style='color: #0A3841; font-weight: bold;'>2029 Target: ${rev2029:,.0f}</p>", unsafe_allow_html=True)
+
+st.markdown("##### **Margin & Valuation Drivers**")
+col_m1, col_m2 = st.columns(2)
+
+with col_m1:
     gm = st.slider("Gross Margin % Target", 20.0, 45.0, 25.43475, step=0.5) / 100.0
     st.markdown(f"<p style='color: #0A3841; font-weight: bold;'>Margin: {gm*100:.2f}%</p>", unsafe_allow_html=True)
 
-with col_s3:
+with col_m2:
     mult = st.slider("Exit EV/EBITDA Multiple", 2.0, 8.0, 3.0, step=0.25)
     st.markdown(f"<p style='color: #0A3841; font-weight: bold;'>Multiple: {mult:.2f}x</p>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # 2. MODEL CALCULATIONS
 # ---------------------------------------------------------
-# Multi-year revenue trajectory based on model ratios
-ratio_2028 = 5241736.125 / 1626975.0
-ratio_2029 = 16887842.63 / 1626975.0
-
-rev2028 = rev2027 * ratio_2028
-rev2029 = rev2027 * ratio_2029
-
 gp2027 = rev2027 * gm
 gp2028 = rev2028 * gm
 gp2029 = rev2029 * gm
@@ -88,7 +93,7 @@ calculated_irr = calculate_irr(cash_flows) * 100.0
 st.divider()
 
 # ---------------------------------------------------------
-# 3. RECALCULATED FINANCIAL OUTPUTS & BREAKEVEN METRICS
+# 3. RECALCULATED FINANCIAL OUTPUTS & RETURN METRICS
 # ---------------------------------------------------------
 st.subheader("2. Live Recalculated Outputs & Return Metrics")
 
@@ -119,7 +124,6 @@ b3.metric("2029F Breakeven Revenue", f"${be_rev_2029:,.0f}", f"Current: ${rev202
 
 st.markdown("**Breakeven Revenue Matrix at Varying Gross Margins:**")
 
-# Sensitivity Table for Breakeven Revenue at selected GM steps
 margin_steps = [0.20, 0.25, 0.30, 0.35, 0.40]
 if gm not in margin_steps:
     margin_steps.append(gm)
