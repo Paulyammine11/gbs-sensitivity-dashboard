@@ -79,23 +79,30 @@ be_rev_2027 = oh2027 / gm if gm > 0 else 0
 be_rev_2028 = oh2028 / gm if gm > 0 else 0
 be_rev_2029 = oh2029 / gm if gm > 0 else 0
 
-# Project Cash Flows & IRR Output
-cf_2026 = -1521764.85
-cash_flows = [
-    cf_2026, 
-    -108072.51 * (rev2027 / 1626975.0), 
-    280991.42 * (rev2028 / 5241736.125), 
-    (1788851.74 * (rev2029 / 16887842.63)) + tv
-]
+# Operating Cash Flow Calculations
+cf_2026_ops = -521764.85 # Fixed initial launch setup burn
+cf_2027_ops = -108072.51 * (rev2027 / 1626975.0)
+cf_2028_ops = 280991.42 * (rev2028 / 5241736.125)
+cf_2029_ops = 1788851.74 * (rev2029 / 16887842.63)
 
+# Dynamic Cumulative Deficit / Funding Needs Analysis
+cum_cash_2026 = cf_2026_ops
+cum_cash_2027 = cum_cash_2026 + cf_2027_ops
+cum_cash_2028 = cum_cash_2027 + cf_2028_ops
+
+peak_cash_deficit = min(0.0, cum_cash_2026, cum_cash_2027, cum_cash_2028)
+funding_needed = abs(peak_cash_deficit)
+
+# Project Returns & IRR
+cash_flows = [-1000000.0 + cf_2026_ops, cf_2027_ops, cf_2028_ops, cf_2029_ops + tv]
 calculated_irr = calculate_irr(cash_flows) * 100.0
 
 st.divider()
 
 # ---------------------------------------------------------
-# 3. RECALCULATED FINANCIAL OUTPUTS & RETURN METRICS
+# 3. RECALCULATED FINANCIAL OUTPUTS & FUNDING METRICS
 # ---------------------------------------------------------
-st.subheader("2. Live Recalculated Outputs & Return Metrics")
+st.subheader("2. Live Recalculated Outputs & Funding Metrics")
 
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("2027F Revenue (Yr 1)", f"${rev2027:,.0f}")
@@ -108,6 +115,12 @@ col5.metric("2027F EBITDA", f"${ebitda2027:,.0f}", f"{ebitda_margin_2027:.1f}% M
 col6.metric("2028F EBITDA", f"${ebitda2028:,.0f}", f"{ebitda_margin_2028:.1f}% Margin")
 col7.metric("2029F EBITDA", f"${ebitda2029:,.0f}", f"{ebitda_margin_2029:.1f}% Margin")
 col8.metric("Projected IRR (Output)", f"{calculated_irr:.2f}%")
+
+st.markdown("##### **Capital & Liquidity Requirements**")
+f1, f2, f3 = st.columns(3)
+f1.metric("Required Funding Needs (Peak Deficit)", f"${funding_needed:,.0f}", help="Maximum cumulative cash deficit before operations reach net cash-flow positivity.")
+f2.metric("Base Equity Injection", "$1,000,000", help="Initial Holdco loan/equity commitment modeled.")
+f3.metric("Funding Buffer / (Shortfall)", f"${1000000 - funding_needed:,.0f}", delta=f"{1000000 - funding_needed:,.0f}")
 
 st.divider()
 
