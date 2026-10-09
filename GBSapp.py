@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 
 # ---------------------------------------------------------
-# PAGE CONFIGURATION & MOBILE CSS
+# PAGE CONFIGURATION & DARK TEAL THEME CSS
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="GBS Acquisition Dashboard",
@@ -11,71 +11,99 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Responsive Mobile-First CSS
+# Dark Teal Aesthetic CSS Matching Image Palette
 st.markdown("""
 <style>
+    /* Dark Teal App Background */
     .stApp {
-        background-color: #F8FAFC;
+        background-color: #082C33;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #E2E8F0;
     }
     
-    /* Executive Top Sticky Header Cards */
-    .top-summary-container {
-        background-color: #FFFFFF;
-        border: 1px solid #CBD5E1;
-        border-radius: 12px;
-        padding: 12px 14px;
+    /* Header Styling */
+    .main-header {
+        color: #FFFFFF;
+        font-size: 1.4rem;
+        font-weight: 800;
+        margin-bottom: 2px;
+        letter-spacing: -0.5px;
+    }
+    .sub-header {
+        color: #94A3B8;
+        font-size: 0.8rem;
         margin-bottom: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+    
+    /* Top Sticky Summary Metric Cards */
+    .top-summary-container {
+        background-color: #0E424D;
+        border: 1px solid #1A5A67;
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     }
     .top-label {
-        color: #64748B;
-        font-size: 0.70rem;
+        color: #94A3B8;
+        font-size: 0.68rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
     .top-value {
-        color: #0A3841;
+        color: #1CDAC5;
         font-size: 1.25rem;
         font-weight: 800;
     }
     .top-sub {
-        color: #0E8074;
+        color: #F6C344;
         font-size: 0.72rem;
         font-weight: 600;
     }
 
-    /* Mobile Table Card Styling */
+    /* Mobile Table Dark Cards */
     .pnl-card {
-        background-color: #FFFFFF;
-        border-left: 4px solid #0A3841;
+        background-color: #0E424D;
+        border-left: 4px solid #1CDAC5;
         border-radius: 8px;
         padding: 10px 12px;
-        margin-bottom: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        margin-bottom: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.25);
     }
     .pnl-year {
-        color: #0A3841;
+        color: #FFFFFF;
         font-size: 0.9rem;
         font-weight: 800;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
     }
     .pnl-row {
         display: flex;
         justify-content: space-between;
         font-size: 0.82rem;
-        padding: 2px 0;
-        border-bottom: 1px dashed #F1F5F9;
+        padding: 4px 0;
+        border-bottom: 1px dashed #1E515C;
     }
-    .pnl-title { color: #475569; font-weight: 500; }
-    .pnl-val { color: #0F172A; font-weight: 700; }
+    .pnl-title { color: #CBD5E1; font-weight: 500; }
+    .pnl-val { color: #1CDAC5; font-weight: 700; }
 
-    /* Custom Streamlit Tab Styling */
+    /* Dark Mode Tab Styling */
     button[data-baseweb="tab"] {
         font-size: 0.88rem !important;
         font-weight: 700 !important;
+        color: #94A3B8 !important;
         padding: 8px 12px !important;
+        background-color: transparent !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #1CDAC5 !important;
+        border-bottom-color: #1CDAC5 !important;
+    }
+    
+    /* Make Streamlit Dataframe Text High Contrast in Dark Theme */
+    div[data-testid="stDataFrame"] {
+        background-color: #0E424D;
+        border-radius: 8px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -97,16 +125,16 @@ def calculate_irr(cash_flows, iterations=1000, tol=1e-5):
 # ---------------------------------------------------------
 # TITLE & SUBTITLE
 # ---------------------------------------------------------
-st.markdown("<h3 style='color: #0A3841; margin-bottom:0px; font-weight:800;'>GBS Acquisition Dashboard</h3>", unsafe_allow_html=True)
-st.caption("Standalone Asset Level • Dynamic Mobile Sensitivity Simulator")
+st.markdown("<div class='main-header'>GBS Acquisition Dashboard</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-header'>Standalone Asset Level • Dynamic Sensitivity Simulator</div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# INPUT CONTROLS (TABS FOR INPUTS VS DETAILED BREAKDOWNS)
+# INPUT CONTROLS (3 TABS)
 # ---------------------------------------------------------
 tab_inputs, tab_pnl, tab_breakeven = st.tabs(["🎛️ 1. Inputs", "📋 2. Financials", "⚖️ 3. Breakeven"])
 
 with tab_inputs:
-    st.markdown("#### **Operating Drivers**")
+    st.markdown("<h4 style='color: #1CDAC5;'>Operating Drivers</h4>", unsafe_allow_html=True)
     
     rev2027 = st.slider("2027F Revenue ($)", 1_000_000, 2_500_000, 1_626_975, step=25_000)
     rev2028 = st.slider("2028F Revenue ($)", 2_000_000, 8_000_000, 5_241_736, step=50_000)
@@ -115,7 +143,7 @@ with tab_inputs:
     gm = st.slider("Gross Margin (%)", 20.0, 45.0, 25.43475, step=0.5) / 100.0
     mult = st.slider("Exit Multiple (x)", 2.0, 8.0, 3.0, step=0.25)
     
-    st.markdown("#### **Capital Structure**")
+    st.markdown("<h4 style='color: #1CDAC5;'>Capital Structure</h4>", unsafe_allow_html=True)
     equity_mode = st.radio("Equity Commitment Mode", ["Auto-Sized (Dynamic)", "Fixed Manual Cap"])
     
     if equity_mode == "Auto-Sized (Dynamic)":
@@ -144,7 +172,7 @@ ebitda_margin_2029 = (ebitda2029 / rev2029) * 100.0 if rev2029 > 0 else 0
 
 tv = max(0.0, ebitda2029 * mult)
 
-# Working Capital & Peak Deficit
+# Working Capital & Deficit Sizing
 ar_days = 60
 ar_2027 = rev2027 * (ar_days / 365.0)
 ar_2028 = rev2028 * (ar_days / 365.0)
@@ -176,10 +204,10 @@ be_rev_2028 = oh2028 / gm if gm > 0 else 0
 be_rev_2029 = oh2029 / gm if gm > 0 else 0
 
 # ---------------------------------------------------------
-# ALWAYS-VISIBLE TOP EXECUTIVE SUMMARY (MOBILE OPTIMIZED)
+# EXECUTIVE TOP SUMMARY CARDS (DARK TEAL HIGH CONTRAST)
 # ---------------------------------------------------------
 st.markdown("---")
-st.markdown("#### **Executive Key Metrics (Live)**")
+st.markdown("<h4 style='color: #FFFFFF;'>Executive Key Metrics (Live)</h4>", unsafe_allow_html=True)
 
 m_col1, m_col2 = st.columns(2)
 with m_col1:
@@ -217,10 +245,10 @@ with m_col2:
     """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# TAB 2: MOBILE FINANCIAL CARDS (NO HIDDEN COLUMNS)
+# TAB 2: FINANCIAL TRAJECTORY
 # ---------------------------------------------------------
 with tab_pnl:
-    st.markdown("#### **3-Year Financial Trajectory**")
+    st.markdown("<h4 style='color: #1CDAC5;'>3-Year Financial Trajectory</h4>", unsafe_allow_html=True)
     
     # 2027F Card
     st.markdown(f"""
@@ -255,7 +283,7 @@ with tab_pnl:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("#### **Revenue vs EBITDA Chart ($ Millions)**")
+    st.markdown("<h4 style='color: #1CDAC5;'>Revenue vs EBITDA Chart ($ Millions)</h4>", unsafe_allow_html=True)
     chart_data = {
         "2027F": [rev2027/1e6, ebitda2027/1e6],
         "2028F": [rev2028/1e6, ebitda2028/1e6],
@@ -267,7 +295,7 @@ with tab_pnl:
 # TAB 3: BREAKEVEN ANALYSIS
 # ---------------------------------------------------------
 with tab_breakeven:
-    st.markdown("#### **EBITDA Breakeven Sales**")
+    st.markdown("<h4 style='color: #1CDAC5;'>EBITDA Breakeven Sales</h4>", unsafe_allow_html=True)
     st.caption("Sales required to achieve $0 EBITDA at active Gross Margin")
 
     st.markdown(f"""
@@ -278,7 +306,7 @@ with tab_breakeven:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("##### **Margin Sensitivity Matrix**")
+    st.markdown("<h5 style='color: #FFFFFF;'>Margin Sensitivity Matrix</h5>", unsafe_allow_html=True)
     margin_steps = [0.20, 0.25, 0.30, 0.35, 0.40]
     be_matrix = []
     for m in margin_steps:
