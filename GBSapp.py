@@ -138,10 +138,19 @@ def calculate_irr(cash_flows, iterations=1000, tol=1e-5):
     return (rate_low + rate_high) / 2.0
 
 # ---------------------------------------------------------
-# TITLE & SUBTITLE
+# TITLE & TOP RIGHT BRANDING ("Finance+")
 # ---------------------------------------------------------
-st.markdown("<div class='main-header'>GBS Acquisition Dashboard</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-header'>Standalone Asset Level • Dynamic Sensitivity Simulator</div>", unsafe_allow_html=True)
+st.markdown("""
+<div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 5px;">
+    <div>
+        <div class="main-header">GBS Acquisition Dashboard</div>
+        <div class="sub-header">Standalone Asset Level • Dynamic Sensitivity Simulator</div>
+    </div>
+    <div style="font-family: -apple-system, sans-serif; font-size: 1.8rem; font-weight: 300; color: #FFFFFF; letter-spacing: -0.5px; white-space: nowrap;">
+        Finance<span style="color: #1CDAC5; font-weight: 800; font-size: 2.0rem; vertical-align: super; line-height: 0;">+</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # TOP TABS (3 MAIN DASHBOARD SECTIONS)
