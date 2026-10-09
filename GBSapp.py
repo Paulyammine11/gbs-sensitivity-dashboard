@@ -1,8 +1,9 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 import numpy as np
 
 # ---------------------------------------------------------
-# PAGE CONFIGURATION & DARK TEAL THEME CSS
+# PAGE CONFIGURATION & DARK TEAL + GOLD THEME CSS
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="GBS Acquisition Dashboard",
@@ -11,17 +12,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Dark Teal Aesthetic CSS with Pure White Text
+# Dark Teal Aesthetic CSS with Gold Sliders & White Labels
 st.markdown("""
 <style>
-    /* Dark Teal App Background */
     .stApp {
         background-color: #082C33;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: #FFFFFF;
     }
     
-    /* Header & Subheader Styling */
     .main-header {
         color: #FFFFFF;
         font-size: 1.4rem;
@@ -36,12 +35,21 @@ st.markdown("""
         margin-bottom: 12px;
     }
     
-    /* Override Streamlit Captions & Subtext to Pure White */
     .stCaption, p, span, label {
         color: #FFFFFF !important;
     }
     
-    /* Top Sticky Summary Metric Cards */
+    /* Streamlit Sliders in Gold (#F6C344) */
+    div[data-baseweb="slider"] div[role="slider"] {
+        background-color: #F6C344 !important;
+        border-color: #F6C344 !important;
+        box-shadow: 0 0 8px rgba(246, 195, 68, 0.6) !important;
+    }
+    div[data-baseweb="slider"] div {
+        background: linear-gradient(to right, #F6C344, #1CDAC5) !important;
+    }
+    
+    /* Top Sticky Metric Cards */
     .top-summary-container {
         background-color: #0E424D;
         border: 1px solid #1A5A67;
@@ -68,10 +76,10 @@ st.markdown("""
         font-weight: 600;
     }
 
-    /* Mobile Table Dark Cards */
+    /* Financial Mobile Cards */
     .pnl-card {
         background-color: #0E424D;
-        border-left: 4px solid #1CDAC5;
+        border-left: 4px solid #F6C344;
         border-radius: 8px;
         padding: 10px 12px;
         margin-bottom: 10px;
@@ -93,7 +101,7 @@ st.markdown("""
     .pnl-title { color: #FFFFFF !important; font-weight: 600; }
     .pnl-val { color: #1CDAC5; font-weight: 700; }
 
-    /* Dark Mode Tab Styling */
+    /* Dark Mode Tab Customization */
     button[data-baseweb="tab"] {
         font-size: 0.88rem !important;
         font-weight: 700 !important;
@@ -102,11 +110,11 @@ st.markdown("""
         background-color: transparent !important;
     }
     button[data-baseweb="tab"][aria-selected="true"] {
-        color: #1CDAC5 !important;
-        border-bottom-color: #1CDAC5 !important;
+        color: #F6C344 !important;
+        border-bottom-color: #F6C344 !important;
     }
     
-    /* Make Streamlit Dataframe Text High Contrast in Dark Theme */
+    /* Dataframe Container Dark Theme */
     div[data-testid="stDataFrame"] {
         background-color: #0E424D;
         border-radius: 8px;
@@ -137,10 +145,10 @@ st.markdown("<div class='sub-header'>Standalone Asset Level • Dynamic Sensitiv
 # ---------------------------------------------------------
 # INPUT CONTROLS (3 TABS)
 # ---------------------------------------------------------
-tab_inputs, tab_pnl, tab_breakeven = st.tabs(["🎛️ 1. Inputs", "📋 2. Financials", "⚖️ 3. Breakeven"])
+tab_inputs, tab_pnl, tab_breakeven = st.tabs(["🎛️ 1. Inputs", "📋 2. Financials", "⚖️ 3. Sensitivity & Matrix"])
 
 with tab_inputs:
-    st.markdown("<h4 style='color: #1CDAC5;'>Operating Drivers</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: #F6C344;'>Operating Drivers</h4>", unsafe_allow_html=True)
     
     rev2027 = st.slider("2027F Revenue ($)", 1_000_000, 2_500_000, 1_626_975, step=25_000)
     rev2028 = st.slider("2028F Revenue ($)", 2_000_000, 8_000_000, 5_241_736, step=50_000)
@@ -149,7 +157,8 @@ with tab_inputs:
     gm = st.slider("Gross Margin (%)", 20.0, 45.0, 25.43475, step=0.5) / 100.0
     mult = st.slider("Exit Multiple (x)", 2.0, 8.0, 3.0, step=0.25)
     
-    st.markdown("<h4 style='color: #1CDAC5;'>Capital Structure</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: #F6C344;'>Capital & Working Capital Structure</h4>", unsafe_allow_html=True)
+    ar_days = st.slider("Collection Period (AR Days)", 30, 120, 60, step=5)
     equity_mode = st.radio("Equity Commitment Mode", ["Auto-Sized (Dynamic)", "Fixed Manual Cap"])
     
     if equity_mode == "Auto-Sized (Dynamic)":
@@ -160,8 +169,11 @@ with tab_inputs:
         safety_buffer_pct = 0.0
 
 # ---------------------------------------------------------
-# CORE MODEL CALCULATIONS
+# CORE DYNAMIC MODEL CALCULATIONS
 # ---------------------------------------------------------
+rev2026 = 505000.0
+ebitda2026 = -100525.51
+
 gp2027 = rev2027 * gm
 gp2028 = rev2028 * gm
 gp2029 = rev2029 * gm
@@ -178,8 +190,7 @@ ebitda_margin_2029 = (ebitda2029 / rev2029) * 100.0 if rev2029 > 0 else 0
 
 tv = max(0.0, ebitda2029 * mult)
 
-# Working Capital & Deficit Sizing
-ar_days = 60
+# Working Capital & Cash Burn Engine
 ar_2027 = rev2027 * (ar_days / 365.0)
 ar_2028 = rev2028 * (ar_days / 365.0)
 ar_2029 = rev2029 * (ar_days / 365.0)
@@ -200,8 +211,6 @@ if equity_mode == "Auto-Sized (Dynamic)":
 else:
     dynamic_committed_equity = manual_equity
 
-funding_cushion = dynamic_committed_equity - peak_cash_deficit
-
 cash_flows = [-dynamic_committed_equity + cf_2026_ops, cf_2027_ops, cf_2028_ops, cf_2029_ops + tv]
 calculated_irr = calculate_irr(cash_flows) * 100.0
 
@@ -210,7 +219,7 @@ be_rev_2028 = oh2028 / gm if gm > 0 else 0
 be_rev_2029 = oh2029 / gm if gm > 0 else 0
 
 # ---------------------------------------------------------
-# EXECUTIVE TOP SUMMARY CARDS (PURE WHITE LABELS)
+# EXECUTIVE TOP SUMMARY CARDS
 # ---------------------------------------------------------
 st.markdown("---")
 st.markdown("<h4 style='color: #FFFFFF;'>Executive Key Metrics (Live)</h4>", unsafe_allow_html=True)
@@ -251,7 +260,7 @@ with m_col2:
     """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# TAB 2: FINANCIAL TRAJECTORY
+# TAB 2: FINANCIAL TRAJECTORY & BREAKEVEN COMBO CHART
 # ---------------------------------------------------------
 with tab_pnl:
     st.markdown("<h4 style='color: #1CDAC5;'>3-Year Financial Trajectory</h4>", unsafe_allow_html=True)
@@ -289,37 +298,93 @@ with tab_pnl:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<h4 style='color: #1CDAC5;'>Revenue vs EBITDA Chart ($ Millions)</h4>", unsafe_allow_html=True)
-    chart_data = {
-        "2027F": [rev2027/1e6, ebitda2027/1e6],
-        "2028F": [rev2028/1e6, ebitda2028/1e6],
-        "2029F": [rev2029/1e6, ebitda2029/1e6],
-    }
-    st.bar_chart(chart_data)
+    st.markdown("<h4 style='color: #1CDAC5;'>Financial Trajectory & Breakeven Curve</h4>", unsafe_allow_html=True)
+    
+    # RECREATING breakeven_chart.png
+    years = ['FY2026', 'FY2027', 'FY2028', 'FY2029']
+    rev_series = [rev2026 / 1e6, rev2027 / 1e6, rev2028 / 1e6, rev2029 / 1e6]
+    ebitda_series = [ebitda2026 / 1e6, ebitda2027 / 1e6, ebitda2028 / 1e6, ebitda2029 / 1e6]
+
+    fig, ax = plt.subplots(figsize=(10, 4.8))
+    fig.patch.set_facecolor('#082C33')
+    ax.set_facecolor('#082C33')
+
+    # Revenue Light Teal Bars
+    bars = ax.bar(years, rev_series, color='#B2E3DE', width=0.45, label='Revenue', alpha=0.9)
+
+    # EBITDA Gold Line with Points
+    x_coords = np.arange(len(years))
+    ax.plot(x_coords, ebitda_series, color='#D4AF37', linewidth=2.5, marker='o', markersize=7, label='EBITDA')
+
+    # Breakeven Crossover & Vertical Dotted Line
+    be_rev_active = be_rev_2028 / 1e6
+    ax.axhline(0, color='#FFFFFF', linestyle='--', linewidth=1.0, alpha=0.6)
+    
+    if ebitda2027 < 0 and ebitda2028 > 0:
+        frac = abs(ebitda2027) / (abs(ebitda2027) + ebitda2028)
+        be_x = 1.0 + frac
+    else:
+        be_x = 2.0
+
+    ax.axvline(be_x, color='#FFFFFF', linestyle=':', linewidth=1.2, alpha=0.7)
+    ax.plot(be_x, 0, marker='o', markersize=8, color='#FFFFFF', markeredgecolor='#082C33', markeredgewidth=2)
+
+    # Breakeven Annotation Box & Arrow
+    ax.annotate(f"Breakeven: ~${be_rev_active:.1f}M sales\n(~Q1 FY2028E)",
+                xy=(be_x, 0), xytext=(be_x - 0.45, max(rev_series)*0.38),
+                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=-0.2', color='#FFFFFF', lw=1.2),
+                fontsize=9.0, fontweight='bold', color='#FFFFFF', ha='center',
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='#0E424D', edgecolor='#1CDAC5', lw=1))
+
+    # Revenue Bar Value Annotations
+    for bar, val in zip(bars, rev_series):
+        ax.annotate(f"${val:.1f}M",
+                    xy=(bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                    xytext=(0, 4), textcoords="offset points",
+                    ha='center', va='bottom', fontsize=8.5, fontweight='bold', color='#1CDAC5')
+
+    # EBITDA Line Value Annotations
+    for x_i, val in zip(x_coords, ebitda_series):
+        offset = 8 if val >= 0 else -14
+        va_align = 'bottom' if val >= 0 else 'top'
+        txt = f"${val:.1f}M" if val >= 0 else f"$({abs(val):.1f})M"
+        ax.annotate(txt, xy=(x_i, val), xytext=(0, offset), textcoords="offset points",
+                    ha='center', va=va_align, fontsize=8.5, fontweight='bold', color='#D4AF37')
+
+    ax.set_ylabel('USD ($ Millions)', fontsize=9.5, fontweight='bold', color='#FFFFFF')
+    ax.tick_params(axis='x', colors='#FFFFFF', labelsize=9.5)
+    ax.tick_params(axis='y', colors='#FFFFFF', labelsize=8.5)
+    ax.grid(axis='y', linestyle='-', alpha=0.15, color='#FFFFFF')
+    ax.legend(facecolor='#0E424D', edgecolor='#1A5A67', labelcolor='#FFFFFF', loc='upper left', fontsize=9)
+
+    ax.set_ylim(min(-0.5, min(ebitda_series)*1.5), max(rev_series) * 1.18)
+    plt.tight_layout()
+    st.pyplot(fig)
+    plt.close(fig)
 
 # ---------------------------------------------------------
-# TAB 3: BREAKEVEN ANALYSIS
+# TAB 3: 2D SENSITIVITY MATRIX (MATCHING SECOND IMAGE)
 # ---------------------------------------------------------
 with tab_breakeven:
-    st.markdown("<h4 style='color: #1CDAC5;'>EBITDA Breakeven Sales</h4>", unsafe_allow_html=True)
-    st.caption("Sales required to achieve $0 EBITDA at active Gross Margin")
+    st.markdown("<h4 style='color: #1CDAC5;'>FY2029E EBITDA Sensitivity Matrix</h4>", unsafe_allow_html=True)
+    st.caption("Revenue Scenarios (±20%) × EBITDA Margin Assumptions (15%–28%)")
 
-    st.markdown(f"""
-    <div class="pnl-card">
-        <div class="pnl-row"><span class="pnl-title">2027F Breakeven Target:</span><span class="pnl-val">${be_rev_2027:,.0f}</span></div>
-        <div class="pnl-row"><span class="pnl-title">2028F Breakeven Target:</span><span class="pnl-val">${be_rev_2028:,.0f}</span></div>
-        <div class="pnl-row"><span class="pnl-title">2029F Breakeven Target:</span><span class="pnl-val">${be_rev_2029:,.0f}</span></div>
-    </div>
-    """, unsafe_allow_html=True)
+    # RECREATING sample_sensitivity_matrix.png
+    rev_scenarios = {
+        "Downside (-20%)": rev2029 * 0.80,
+        f"Base (${rev2029/1e6:.1f}M)": rev2029,
+        "Upside (+20%)": rev2029 * 1.20
+    }
+    
+    margin_columns = [0.15, 0.20, gm if gm not in [0.15, 0.20, 0.28] else 0.23, 0.28]
+    margin_columns = sorted(list(set(margin_columns)))
 
-    st.markdown("<h5 style='color: #FFFFFF;'>Margin Sensitivity Matrix</h5>", unsafe_allow_html=True)
-    margin_steps = [0.20, 0.25, 0.30, 0.35, 0.40]
-    be_matrix = []
-    for m in margin_steps:
-        be_matrix.append({
-            "Gross Margin": f"{m*100:.0f}%",
-            "2027F ($)": f"${oh2027/m:,.0f}",
-            "2028F ($)": f"${oh2028/m:,.0f}",
-            "2029F ($)": f"${oh2029/m:,.0f}"
-        })
-    st.dataframe(be_matrix, use_container_width=True, hide_index=True)
+    matrix_rows = []
+    for row_name, r_val in rev_scenarios.items():
+        row_dict = {"Revenue Scenario": f"{row_name}"}
+        for m_val in margin_columns:
+            calc_ebitda = (r_val * m_val) - oh2029
+            row_dict[f"{m_val*100:.0f}% Margin"] = f"${calc_ebitda/1e6:.1f}M"
+        matrix_rows.append(row_dict)
+
+    st.dataframe(matrix_rows, use_container_width=True, hide_index=True)
