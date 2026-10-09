@@ -184,35 +184,35 @@ st.markdown("#### **Executive Key Metrics (Live)**")
 m_col1, m_col2 = st.columns(2)
 with m_col1:
     st.markdown(f"""
-    <div class='top-summary-container'>
-        <div class='top-label'>Terminal Valuation</div>
-        <div class='top-value'>${tv/1e6:.2f}M</div>
-        <div class='top-sub'>Exit @ {mult:.2f}x Multiple</div>
+    <div class="top-summary-container">
+        <div class="top-label">Terminal Valuation</div>
+        <div class="top-value">${tv/1e6:.2f}M</div>
+        <div class="top-sub">Exit @ {mult:.2f}x Multiple</div>
     </div>
     """, unsafe_allow_html=True)
     
     st.markdown(f"""
-    <div class='top-summary-container'>
-        <div class='top-label'>Projected IRR</div>
-        <div class='top-value'>{calculated_irr:.1f}%</div>
-        <div class='top-sub'>Output Return</div>
+    <div class="top-summary-container">
+        <div class="top-label">Projected IRR</div>
+        <div class="top-value">{calculated_irr:.1f}%</div>
+        <div class="top-sub">Output Return</div>
     </div>
     """, unsafe_allow_html=True)
 
 with m_col2:
     st.markdown(f"""
-    <div class='top-summary-container'>
-        <div class='top-label'>2029F EBITDA</div>
-        <div class='top-value'>${ebitda2029/1e6:.2f}M</div>
-        <div class='top-sub'>{ebitda_margin_2029:.1f}% Margin</div>
+    <div class="top-summary-container">
+        <div class="top-label">2029F EBITDA</div>
+        <div class="top-value">${ebitda2029/1e6:.2f}M</div>
+        <div class="top-sub">{ebitda_margin_2029:.1f}% Margin</div>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown(f"""
-    <div class='top-summary-container'>
-        <div class='top-label'>Funding Needed</div>
-        <div class='top-value'>${peak_cash_deficit/1e6:.2f}M</div>
-        <div class='top-sub'>Peak Deficit</div>
+    <div class="top-summary-container">
+        <div class="top-label">Funding Needed</div>
+        <div class="top-value">${peak_cash_deficit/1e6:.2f}M</div>
+        <div class="top-sub">Peak Deficit</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -224,17 +224,68 @@ with tab_pnl:
     
     # 2027F Card
     st.markdown(f"""
-    <div class='pnl-card'>
-        <div class='pnl-year'>Year 1 (2027F)</div>
-        <div class='pnl-row'><span class='pnl-title'>Revenue:</span><span class='pnl-val'>${rev2027:,.0f}</span></div>
-        <div class='pnl-row'><span class='pnl-title'>Gross Profit ({gm*100:.1f}%):</span><span class='pnl-val'>${gp2027:,.0f}</span></div>
-        <div class='pnl-row'><span class='pnl-title'>Overheads:</span><span class='pnl-val'>${oh2027:,.0f}</span></div>
-        <div class='pnl-row'><span class='pnl-title'>EBITDA ({ebitda_margin_2027:.1f}%):</span><span class='pnl-val'>${ebitda2027:,.0f}</span></div>
+    <div class="pnl-card">
+        <div class="pnl-year">Year 1 (2027F)</div>
+        <div class="pnl-row"><span class="pnl-title">Revenue:</span><span class="pnl-val">${rev2027:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">Gross Profit ({gm*100:.1f}%):</span><span class="pnl-val">${gp2027:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">Overheads:</span><span class="pnl-val">${oh2027:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">EBITDA ({ebitda_margin_2027:.1f}%):</span><span class="pnl-val">${ebitda2027:,.0f}</span></div>
     </div>
     """, unsafe_allow_html=True)
 
     # 2028F Card
     st.markdown(f"""
-    <div class='pnl-card'>
-        <div class='pnl-year'>Year 2 (2028F)</div>
-        <div class='pnl-row'><span class='pnl-title'>Revenue:</span><span class='pnl-val'>${rev
+    <div class="pnl-card">
+        <div class="pnl-year">Year 2 (2028F)</div>
+        <div class="pnl-row"><span class="pnl-title">Revenue:</span><span class="pnl-val">${rev2028:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">Gross Profit ({gm*100:.1f}%):</span><span class="pnl-val">${gp2028:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">Overheads:</span><span class="pnl-val">${oh2028:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">EBITDA ({ebitda_margin_2028:.1f}%):</span><span class="pnl-val">${ebitda2028:,.0f}</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2029F Card
+    st.markdown(f"""
+    <div class="pnl-card">
+        <div class="pnl-year">Year 3 (2029F)</div>
+        <div class="pnl-row"><span class="pnl-title">Revenue:</span><span class="pnl-val">${rev2029:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">Gross Profit ({gm*100:.1f}%):</span><span class="pnl-val">${gp2029:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">Overheads:</span><span class="pnl-val">${oh2029:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">EBITDA ({ebitda_margin_2029:.1f}%):</span><span class="pnl-val">${ebitda2029:,.0f}</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("#### **Revenue vs EBITDA Chart ($ Millions)**")
+    chart_data = {
+        "2027F": [rev2027/1e6, ebitda2027/1e6],
+        "2028F": [rev2028/1e6, ebitda2028/1e6],
+        "2029F": [rev2029/1e6, ebitda2029/1e6],
+    }
+    st.bar_chart(chart_data)
+
+# ---------------------------------------------------------
+# TAB 3: BREAKEVEN ANALYSIS
+# ---------------------------------------------------------
+with tab_breakeven:
+    st.markdown("#### **EBITDA Breakeven Sales**")
+    st.caption("Sales required to achieve $0 EBITDA at active Gross Margin")
+
+    st.markdown(f"""
+    <div class="pnl-card">
+        <div class="pnl-row"><span class="pnl-title">2027F Breakeven Target:</span><span class="pnl-val">${be_rev_2027:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">2028F Breakeven Target:</span><span class="pnl-val">${be_rev_2028:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">2029F Breakeven Target:</span><span class="pnl-val">${be_rev_2029:,.0f}</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("##### **Margin Sensitivity Matrix**")
+    margin_steps = [0.20, 0.25, 0.30, 0.35, 0.40]
+    be_matrix = []
+    for m in margin_steps:
+        be_matrix.append({
+            "Gross Margin": f"{m*100:.0f}%",
+            "2027F ($)": f"${oh2027/m:,.0f}",
+            "2028F ($)": f"${oh2028/m:,.0f}",
+            "2029F ($)": f"${oh2029/m:,.0f}"
+        })
+    st.dataframe(be_matrix, use_container_width=True, hide_index=True)
