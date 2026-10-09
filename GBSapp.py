@@ -11,17 +11,17 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Dark Teal Aesthetic CSS Matching Image Palette
+# Dark Teal Aesthetic CSS with Pure White Text
 st.markdown("""
 <style>
     /* Dark Teal App Background */
     .stApp {
         background-color: #082C33;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        color: #E2E8F0;
+        color: #FFFFFF;
     }
     
-    /* Header Styling */
+    /* Header & Subheader Styling */
     .main-header {
         color: #FFFFFF;
         font-size: 1.4rem;
@@ -30,9 +30,15 @@ st.markdown("""
         letter-spacing: -0.5px;
     }
     .sub-header {
-        color: #94A3B8;
-        font-size: 0.8rem;
+        color: #E2E8F0;
+        font-size: 0.82rem;
+        font-weight: 500;
         margin-bottom: 12px;
+    }
+    
+    /* Override Streamlit Captions & Subtext to Pure White */
+    .stCaption, p, span, label {
+        color: #FFFFFF !important;
     }
     
     /* Top Sticky Summary Metric Cards */
@@ -45,8 +51,8 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     }
     .top-label {
-        color: #94A3B8;
-        font-size: 0.68rem;
+        color: #FFFFFF !important;
+        font-size: 0.70rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -84,14 +90,14 @@ st.markdown("""
         padding: 4px 0;
         border-bottom: 1px dashed #1E515C;
     }
-    .pnl-title { color: #CBD5E1; font-weight: 500; }
+    .pnl-title { color: #FFFFFF !important; font-weight: 600; }
     .pnl-val { color: #1CDAC5; font-weight: 700; }
 
     /* Dark Mode Tab Styling */
     button[data-baseweb="tab"] {
         font-size: 0.88rem !important;
         font-weight: 700 !important;
-        color: #94A3B8 !important;
+        color: #E2E8F0 !important;
         padding: 8px 12px !important;
         background-color: transparent !important;
     }
@@ -204,7 +210,7 @@ be_rev_2028 = oh2028 / gm if gm > 0 else 0
 be_rev_2029 = oh2029 / gm if gm > 0 else 0
 
 # ---------------------------------------------------------
-# EXECUTIVE TOP SUMMARY CARDS (DARK TEAL HIGH CONTRAST)
+# EXECUTIVE TOP SUMMARY CARDS (PURE WHITE LABELS)
 # ---------------------------------------------------------
 st.markdown("---")
 st.markdown("<h4 style='color: #FFFFFF;'>Executive Key Metrics (Live)</h4>", unsafe_allow_html=True)
