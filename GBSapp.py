@@ -15,6 +15,7 @@ st.set_page_config(
 # Dark Teal Aesthetic CSS with Gold Sliders & White Labels
 st.markdown("""
 <style>
+    /* Dark Teal Base Background */
     .stApp {
         background-color: #082C33;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -150,4 +151,184 @@ tab_inputs, tab_pnl, tab_breakeven = st.tabs(["🎛️ 1. Inputs", "📋 2. Fina
 with tab_inputs:
     st.markdown("<h4 style='color: #F6C344;'>Operating Drivers</h4>", unsafe_allow_html=True)
     
-    rev2027 = st
+    rev2027 = st.slider("2027F Revenue ($)", 1_000_000, 2_500_000, 1_626_975, step=25_000, format="$%,d")
+    rev2028 = st.slider("2028F Revenue ($)", 2_000_000, 8_000_000, 5_241_736, step=50_000, format="$%,d")
+    rev2029 = st.slider("2029F Revenue ($)", 5_000_000, 25_000_000, 16_887_843, step=100_000, format="$%,d")
+    
+    gm = st.slider("Gross Margin (%)", 20.0, 45.0, 25.43475, step=0.5, format="%.2f%%") / 100.0
+    mult = st.slider("Exit Multiple (x)", 2.0, 8.0, 3.0, step=0.25, format="%.2fx")
+    
+    st.markdown("<h4 style='color: #F6C344;'>Capital & Working Capital Structure</h4>", unsafe_allow_html=True)
+    ar_days = st.slider("Collection Period (AR Days)", 30, 120, 60, step=5)
+    equity_mode = st.radio("Equity Commitment Mode", ["Auto-Sized (Dynamic)", "Fixed Manual Cap"])
+    
+    if equity_mode == "Auto-Sized (Dynamic)":
+        safety_buffer_pct = st.slider("Safety Buffer (%)", 0.0, 30.0, 10.0, step=5.0, format="%.1f%%") / 100.0
+        manual_equity = 0.0
+    else:
+        manual_equity = st.slider("Manual Equity ($)", 500_000, 2_500_000, 1_000_000, step=50_000, format="$%,d")
+        safety_buffer_pct = 0.0
+
+# ---------------------------------------------------------
+# CORE DYNAMIC MODEL CALCULATIONS
+# ---------------------------------------------------------
+rev2026 = 505000.0
+ebitda2026 = -100525.51
+
+gp2027 = rev2027 * gm
+gp2028 = rev2028 * gm
+gp2029 = rev2029 * gm
+
+oh2027, oh2028, oh2029 = 682410.60, 418605.33, 421959.80
+
+ebitda2027 = gp2027 - oh2027
+ebitda2028 = gp2028 - oh2028
+ebitda2029 = gp2029 - oh2029
+
+ebitda_margin_2027 = (ebitda2027 / rev2027) * 100.0 if rev2027 > 0 else 0
+ebitda_margin_2028 = (ebitda2028 / rev2028) * 100.0 if rev2028 > 0 else 0
+ebitda_margin_2029 = (ebitda2029 / rev2029) * 100.0 if rev2029 > 0 else 0
+
+tv = max(0.0, ebitda2029 * mult)
+
+# Dynamic Working Capital & Cash Burn Engine
+ar_2027 = rev2027 * (ar_days / 365.0)
+ar_2028 = rev2028 * (ar_days / 365.0)
+ar_2029 = rev2029 * (ar_days / 365.0)
+
+cf_2026_ops = -521764.85
+cf_2027_ops = ebitda2027 - (ar_2027 - 252500.0)
+cf_2028_ops = ebitda2028 - (ar_2028 - ar_2027)
+cf_2029_ops = ebitda2029 - (ar_2029 - ar_2028)
+
+cum_cash_2026 = cf_2026_ops
+cum_cash_2027 = cum_cash_2026 + cf_2027_ops
+cum_cash_2028 = cum_cash_2027 + cf_2028_ops
+
+peak_cash_deficit = abs(min(0.0, cum_cash_2026, cum_cash_2027, cum_cash_2028))
+
+if equity_mode == "Auto-Sized (Dynamic)":
+    dynamic_committed_equity = peak_cash_deficit * (1.0 + safety_buffer_pct)
+else:
+    dynamic_committed_equity = manual_equity
+
+funding_cushion = dynamic_committed_equity - peak_cash_deficit
+
+cash_flows = [-dynamic_committed_equity + cf_2026_ops, cf_2027_ops, cf_2028_ops, cf_2029_ops + tv]
+calculated_irr = calculate_irr(cash_flows) * 100.0
+
+be_rev_2027 = oh2027 / gm if gm > 0 else 0
+be_rev_2028 = oh2028 / gm if gm > 0 else 0
+be_rev_2029 = oh2029 / gm if gm > 0 else 0
+
+# ---------------------------------------------------------
+# EXECUTIVE TOP SUMMARY CARDS
+# ---------------------------------------------------------
+st.markdown("---")
+st.markdown("<h4 style='color: #FFFFFF;'>Executive Key Metrics (Live)</h4>", unsafe_allow_html=True)
+
+m_col1, m_col2 = st.columns(2)
+with m_col1:
+    st.markdown(f"""
+    <div class="top-summary-container">
+        <div class="top-label">Terminal Valuation</div>
+        <div class="top-value">${tv/1e6:.2f}M</div>
+        <div class="top-sub">Exit @ {mult:.2f}x Multiple</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown(f"""
+    <div class="top-summary-container">
+        <div class="top-label">Projected IRR</div>
+        <div class="top-value">{calculated_irr:.1f}%</div>
+        <div class="top-sub">Output Return</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with m_col2:
+    st.markdown(f"""
+    <div class="top-summary-container">
+        <div class="top-label">2029F EBITDA</div>
+        <div class="top-value">${ebitda2029/1e6:.2f}M</div>
+        <div class="top-sub">{ebitda_margin_2029:.1f}% Margin</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="top-summary-container">
+        <div class="top-label">Funding Needed</div>
+        <div class="top-value">${peak_cash_deficit/1e6:.2f}M</div>
+        <div class="top-sub">Peak Deficit</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# TAB 2: FINANCIAL TRAJECTORY & BREAKEVEN COMBO CHART
+# ---------------------------------------------------------
+with tab_pnl:
+    st.markdown("<h4 style='color: #1CDAC5;'>3-Year Financial Trajectory</h4>", unsafe_allow_html=True)
+    
+    # 2027F Card
+    st.markdown(f"""
+    <div class="pnl-card">
+        <div class="pnl-year">Year 1 (2027F)</div>
+        <div class="pnl-row"><span class="pnl-title">Revenue:</span><span class="pnl-val">${rev2027:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">Gross Profit ({gm*100:.1f}%):</span><span class="pnl-val">${gp2027:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">Overheads:</span><span class="pnl-val">${oh2027:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">EBITDA ({ebitda_margin_2027:.1f}%):</span><span class="pnl-val">${ebitda2027:,.0f}</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2028F Card
+    st.markdown(f"""
+    <div class="pnl-card">
+        <div class="pnl-year">Year 2 (2028F)</div>
+        <div class="pnl-row"><span class="pnl-title">Revenue:</span><span class="pnl-val">${rev2028:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">Gross Profit ({gm*100:.1f}%):</span><span class="pnl-val">${gp2028:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">Overheads:</span><span class="pnl-val">${oh2028:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">EBITDA ({ebitda_margin_2028:.1f}%):</span><span class="pnl-val">${ebitda2028:,.0f}</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2029F Card
+    st.markdown(f"""
+    <div class="pnl-card">
+        <div class="pnl-year">Year 3 (2029F)</div>
+        <div class="pnl-row"><span class="pnl-title">Revenue:</span><span class="pnl-val">${rev2029:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">Gross Profit ({gm*100:.1f}%):</span><span class="pnl-val">${gp2029:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">Overheads:</span><span class="pnl-val">${oh2029:,.0f}</span></div>
+        <div class="pnl-row"><span class="pnl-title">EBITDA ({ebitda_margin_2029:.1f}%):</span><span class="pnl-val">${ebitda2029:,.0f}</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<h4 style='color: #1CDAC5;'>Financial Trajectory & Breakeven Curve</h4>", unsafe_allow_html=True)
+    
+    years = ['FY2026', 'FY2027', 'FY2028', 'FY2029']
+    rev_series = [rev2026 / 1e6, rev2027 / 1e6, rev2028 / 1e6, rev2029 / 1e6]
+    ebitda_series = [ebitda2026 / 1e6, ebitda2027 / 1e6, ebitda2028 / 1e6, ebitda2029 / 1e6]
+
+    fig, ax = plt.subplots(figsize=(10, 4.8))
+    fig.patch.set_facecolor('#082C33')
+    ax.set_facecolor('#082C33')
+
+    # Revenue Light Teal Bars
+    bars = ax.bar(years, rev_series, color='#B2E3DE', width=0.45, label='Revenue', alpha=0.9)
+
+    # EBITDA Gold Line
+    x_coords = np.arange(len(years))
+    ax.plot(x_coords, ebitda_series, color='#D4AF37', linewidth=2.5, marker='o', markersize=7, label='EBITDA')
+
+    # Breakeven Crossover Line
+    be_rev_active = be_rev_2028 / 1e6
+    ax.axhline(0, color='#FFFFFF', linestyle='--', linewidth=1.0, alpha=0.6)
+    
+    if ebitda2027 < 0 and ebitda2028 > 0:
+        frac = abs(ebitda2027) / (abs(ebitda2027) + ebitda2028)
+        be_x = 1.0 + frac
+    else:
+        be_x = 2.0
+
+    ax.axvline(be_x, color='#FFFFFF', linestyle=':', linewidth=1.2, alpha=0.7)
+    ax.plot(be_x, 0, marker='o', markersize=8, color='#FFFFFF', markeredgecolor='#082C33', markeredgewidth=2)
+
+    # Bre
