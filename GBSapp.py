@@ -15,7 +15,6 @@ st.set_page_config(
 # Dark Teal Aesthetic CSS with Gold Sliders & White Labels
 st.markdown("""
 <style>
-    /* Dark Teal Base Background */
     .stApp {
         background-color: #082C33;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -144,30 +143,32 @@ st.markdown("<div class='main-header'>GBS Acquisition Dashboard</div>", unsafe_a
 st.markdown("<div class='sub-header'>Standalone Asset Level • Dynamic Sensitivity Simulator</div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# INPUT CONTROLS (WITH FINANCIAL COMMA FORMATTING)
+# 1. INPUT DRIVERS (IN SIDEBAR / INPUT SECTION)
 # ---------------------------------------------------------
-tab_inputs, tab_pnl, tab_breakeven = st.tabs(["🎛️ 1. Inputs", "📋 2. Financials", "⚖️ 3. Sensitivity & Matrix"])
+st.markdown("<h4 style='color: #F6C344;'>1. Operating & Valuation Drivers</h4>", unsafe_allow_html=True)
 
-with tab_inputs:
-    st.markdown("<h4 style='color: #F6C344;'>Operating Drivers</h4>", unsafe_allow_html=True)
-    
+col_in1, col_in2, col_in3 = st.columns(3)
+
+with col_in1:
     rev2027 = st.slider("2027F Revenue ($)", 1_000_000, 2_500_000, 1_626_975, step=25_000, format="$%,d")
     rev2028 = st.slider("2028F Revenue ($)", 2_000_000, 8_000_000, 5_241_736, step=50_000, format="$%,d")
+
+with col_in2:
     rev2029 = st.slider("2029F Revenue ($)", 5_000_000, 25_000_000, 16_887_843, step=100_000, format="$%,d")
-    
     gm = st.slider("Gross Margin (%)", 20.0, 45.0, 25.43475, step=0.5, format="%.2f%%") / 100.0
+
+with col_in3:
     mult = st.slider("Exit Multiple (x)", 2.0, 8.0, 3.0, step=0.25, format="%.2fx")
-    
-    st.markdown("<h4 style='color: #F6C344;'>Capital & Working Capital Structure</h4>", unsafe_allow_html=True)
     ar_days = st.slider("Collection Period (AR Days)", 30, 120, 60, step=5)
-    equity_mode = st.radio("Equity Commitment Mode", ["Auto-Sized (Dynamic)", "Fixed Manual Cap"])
-    
-    if equity_mode == "Auto-Sized (Dynamic)":
-        safety_buffer_pct = st.slider("Safety Buffer (%)", 0.0, 30.0, 10.0, step=5.0, format="%.1f%%") / 100.0
-        manual_equity = 0.0
-    else:
-        manual_equity = st.slider("Manual Equity ($)", 500_000, 2_500_000, 1_000_000, step=50_000, format="$%,d")
-        safety_buffer_pct = 0.0
+
+equity_mode = st.radio("Equity Commitment Mode", ["Auto-Sized (Dynamic)", "Fixed Manual Cap"], horizontal=True)
+
+if equity_mode == "Auto-Sized (Dynamic)":
+    safety_buffer_pct = st.slider("Safety Buffer (%)", 0.0, 30.0, 10.0, step=5.0, format="%.1f%%") / 100.0
+    manual_equity = 0.0
+else:
+    manual_equity = st.slider("Manual Equity ($)", 500_000, 2_500_000, 1_000_000, step=50_000, format="$%,d")
+    safety_buffer_pct = 0.0
 
 # ---------------------------------------------------------
 # CORE DYNAMIC MODEL CALCULATIONS
@@ -191,7 +192,7 @@ ebitda_margin_2029 = (ebitda2029 / rev2029) * 100.0 if rev2029 > 0 else 0
 
 tv = max(0.0, ebitda2029 * mult)
 
-# Dynamic Working Capital & Cash Burn Engine
+# Working Capital & Cash Burn Engine
 ar_2027 = rev2027 * (ar_days / 365.0)
 ar_2028 = rev2028 * (ar_days / 365.0)
 ar_2029 = rev2029 * (ar_days / 365.0)
@@ -222,10 +223,10 @@ be_rev_2028 = oh2028 / gm if gm > 0 else 0
 be_rev_2029 = oh2029 / gm if gm > 0 else 0
 
 # ---------------------------------------------------------
-# EXECUTIVE TOP SUMMARY CARDS
+# EXECUTIVE TOP SUMMARY CARDS (ALWAYS VISIBLE)
 # ---------------------------------------------------------
 st.markdown("---")
-st.markdown("<h4 style='color: #FFFFFF;'>Executive Key Metrics (Live)</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='color: #FFFFFF;'>Executive Key Metrics (Live Outputs)</h4>", unsafe_allow_html=True)
 
 m_col1, m_col2 = st.columns(2)
 with m_col1:
@@ -263,8 +264,12 @@ with m_col2:
     """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# TAB 2: FINANCIAL TRAJECTORY & BREAKEVEN COMBO CHART
+# TABBED OUTPUT SECTIONS
 # ---------------------------------------------------------
+st.markdown("---")
+tab_pnl, tab_matrix = st.tabs(["📋 1. Financial Trajectory & Chart", "⚖️ 2. Sensitivity Matrix"])
+
+# TAB 1: FINANCIAL CARDS & BREAKEVEN CHART
 with tab_pnl:
     st.markdown("<h4 style='color: #1CDAC5;'>3-Year Financial Trajectory</h4>", unsafe_allow_html=True)
     
@@ -303,6 +308,7 @@ with tab_pnl:
 
     st.markdown("<h4 style='color: #1CDAC5;'>Financial Trajectory & Breakeven Curve</h4>", unsafe_allow_html=True)
     
+    # RECREATING breakeven_chart.png
     years = ['FY2026', 'FY2027', 'FY2028', 'FY2029']
     rev_series = [rev2026 / 1e6, rev2027 / 1e6, rev2028 / 1e6, rev2029 / 1e6]
     ebitda_series = [ebitda2026 / 1e6, ebitda2027 / 1e6, ebitda2028 / 1e6, ebitda2029 / 1e6]
@@ -331,4 +337,59 @@ with tab_pnl:
     ax.axvline(be_x, color='#FFFFFF', linestyle=':', linewidth=1.2, alpha=0.7)
     ax.plot(be_x, 0, marker='o', markersize=8, color='#FFFFFF', markeredgecolor='#082C33', markeredgewidth=2)
 
-    # Bre
+    # Breakeven Box Callout
+    ax.annotate(f"Breakeven: ~${be_rev_active:.1f}M sales\n(~Q1 FY2028E)",
+                xy=(be_x, 0), xytext=(be_x - 0.45, max(rev_series)*0.38),
+                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=-0.2', color='#FFFFFF', lw=1.2),
+                fontsize=9.0, fontweight='bold', color='#FFFFFF', ha='center',
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='#0E424D', edgecolor='#1CDAC5', lw=1))
+
+    # Revenue Dollar Values
+    for bar, val in zip(bars, rev_series):
+        ax.annotate(f"${val:.1f}M",
+                    xy=(bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                    xytext=(0, 4), textcoords="offset points",
+                    ha='center', va='bottom', fontsize=8.5, fontweight='bold', color='#1CDAC5')
+
+    # EBITDA Dollar Values
+    for x_i, val in zip(x_coords, ebitda_series):
+        offset = 8 if val >= 0 else -14
+        va_align = 'bottom' if val >= 0 else 'top'
+        txt = f"${val:.1f}M" if val >= 0 else f"$({abs(val):.1f})M"
+        ax.annotate(txt, xy=(x_i, val), xytext=(0, offset), textcoords="offset points",
+                    ha='center', va=va_align, fontsize=8.5, fontweight='bold', color='#D4AF37')
+
+    ax.set_ylabel('USD ($ Millions)', fontsize=9.5, fontweight='bold', color='#FFFFFF')
+    ax.tick_params(axis='x', colors='#FFFFFF', labelsize=9.5)
+    ax.tick_params(axis='y', colors='#FFFFFF', labelsize=8.5)
+    ax.grid(axis='y', linestyle='-', alpha=0.15, color='#FFFFFF')
+    ax.legend(facecolor='#0E424D', edgecolor='#1A5A67', labelcolor='#FFFFFF', loc='upper left', fontsize=9)
+
+    ax.set_ylim(min(-0.5, min(ebitda_series)*1.5), max(rev_series) * 1.18)
+    plt.tight_layout()
+    st.pyplot(fig)
+    plt.close(fig)
+
+# TAB 2: 2D SENSITIVITY MATRIX
+with tab_matrix:
+    st.markdown("<h4 style='color: #1CDAC5;'>FY2029E EBITDA Sensitivity Matrix</h4>", unsafe_allow_html=True)
+    st.caption("Revenue Scenarios (±20%) × EBITDA Margin Assumptions (15%–28%)")
+
+    rev_scenarios = {
+        "Downside (-20%)": rev2029 * 0.80,
+        f"Base (${rev2029/1e6:.1f}M)": rev2029,
+        "Upside (+20%)": rev2029 * 1.20
+    }
+    
+    margin_columns = [0.15, 0.20, gm if gm not in [0.15, 0.20, 0.28] else 0.23, 0.28]
+    margin_columns = sorted(list(set(margin_columns)))
+
+    matrix_rows = []
+    for row_name, r_val in rev_scenarios.items():
+        row_dict = {"Revenue Scenario": f"{row_name}"}
+        for m_val in margin_columns:
+            calc_ebitda = (r_val * m_val) - oh2029
+            row_dict[f"{m_val*100:.0f}% Margin"] = f"${calc_ebitda/1e6:.1f}M"
+        matrix_rows.append(row_dict)
+
+    st.dataframe(matrix_rows, use_container_width=True, hide_index=True)
